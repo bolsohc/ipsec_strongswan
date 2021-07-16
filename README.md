@@ -1,4 +1,4 @@
-ipsec-tunnel
+ipsec_strongswan
 =========
 
 Configure ipsec-tunnels using strongswan
