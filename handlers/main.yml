@@ -1,0 +1,16 @@
+---
+# handlers file for ipsec-tunnel
+
+- name: ipsec reload
+  command: >
+    {{strongswan_ipsec_bin}} reload
+
+- name: ipsec secrets reload
+  command: >
+    {{strongswan_ipsec_bin}} rereadsecrets
+
+- name: enable at boot
+  systemd:
+    name: strongswan
+    state: started
+    enabled: True

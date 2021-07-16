@@ -1,0 +1,89 @@
+---
+# tasks file for ipsec-tunnel
+
+- name: install Strongswan
+  yum:
+    name: strongswan
+    state: present
+
+- name: Enable IP forwarding
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: 1
+    sysctl_set: yes
+    state: present
+    reload: yes
+
+- name: Configure IP redirects 
+  sysctl:
+    name: "{{ item }}"
+    value: 0
+    sysctl_set: yes
+    state: present
+    reload: yes
+  
+  with_items:
+    - net.ipv4.conf.all.accept_redirects
+    - net.ipv4.conf.all.send_redirects
+
+- name: add iptables rules
+  lineinfile:
+    path: /etc/iptables.v4.generated
+    insertbefore: '^# 998 explicitly log and reject everything else'
+    line: "{{ item }}"
+    state: present
+
+  with_items:
+    - "# allow IPsec"
+    - "#"
+    - "# IKE negotiations"
+    - "iptables -A INPUT -p udp --sport 500 --dport 500 -j ACCEPT"
+    - "iptables -A OUTPUT -p udp --sport 500 --dport 500 -j ACCEPT"
+    - "# ESP encrypton and authentication"
+    - "iptables -A INPUT -p esp -j ACCEPT"
+    - "iptables -A OUTPUT -p esp -j ACCEPT"
+    - "# AH authentication header"
+    - "iptables -A INPUT -p ah -j ACCEPT"
+    - "iptables -A OUTPUT -p ah -j ACCEPT"
+    - "# IPsec NAT traversal - if and only if NAT traversal is in use"
+    - "iptables -A INPUT -p udp --dport 4500 -j ACCEPT"
+    - "iptables -A OUTPUT -p udp --dport 4500 -j ACCEPT"
+    - "# IP forwarding"
+    - "iptables -A FORWARD -d 10.0.0.0/8 -j ACCEPT"
+    - "# In order to fix MTU/MSS issues"
+    - "iptables -t mangle -A FORWARD -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1354"
+
+- name: apply iptables rules
+  command: /etc/iptables.v4.generated
+
+- name: backup default ipsec.conf
+  shell: mv /etc/strongswan/ipsec.conf /etc/strongswan/ipsec.conf.backup
+
+- name: remove default ipsec.conf
+  file:
+    path: /etc/strongswan/ipsec.conf
+    state: absent     
+
+- name: apply ipsec.conf
+  template:
+    src: etc/ipsec.conf.j2
+    dest: "{{ strongswan_config_file }}"
+    owner: root
+    group: root
+    mode: 0644
+  notify: ipsec reload
+
+- name: apply ipsec.secrets
+  template:
+    src: etc/ipsec.secrets.j2
+    dest: "{{ strongswan_secrets_file }}"
+    owner: root
+    group: root
+    mode: 0640
+  notify: ipsec secrets reload  
+
+- name: enable at boot
+  systemd:
+    name: strongswan
+    state: started
+    enabled: yes

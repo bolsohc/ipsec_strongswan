@@ -1,0 +1,19 @@
+# Ansible managed
+# {{ strongswan_config_file }} - strongSwan IPsec configuration file
+
+conn {{ gcp }}
+  authby=secret
+  auto=start
+  type=tunnel
+  left={{ gcp_left }}
+  leftsubnet={{ gcp_leftsubnet }}
+  right={{ gcp_right }}
+  rightsubnet={{ gcp_rightsubnet }}
+  ikelifetime=28800s
+  rekeymargin=3m
+  keyingtries=3
+  keyexchange=ikev2
+  mobike=no
+  ike={{ gcp_ike }}
+  esp={{ gcp_esp }}
+  dpdaction=restart

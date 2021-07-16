@@ -1,0 +1,22 @@
+---
+# vars file for ipsec-tunnel
+
+# vps-gcp 
+gcp: vps-gcp
+gcp_left: "{{ ansible_default_ipv4.address }}"
+gcp_leftsubnet:
+gcp_right:
+gcp_rightsubnet:
+gcp_ike:
+gcp_esp:
+
+
+# PSK
+psk_credentials: "2K3Q@iJG[t4^8YNTS%%J{?)]Gd%hrj{w"
+
+# Strongswan vars
+strongswan_packages:
+  - strongswan
+
+strongswan_prefix: /etc/strongswan
+strongswan_ipsec_bin: /sbin/strongswan
